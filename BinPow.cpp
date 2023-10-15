@@ -1,6 +1,3 @@
-// __Davit__
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <bits/stdc++.h>
 
 #define ll long long
@@ -16,12 +13,7 @@
 #define Davit cout.tie(NULL);
 
 using namespace std;
-using vec = vector<ll>;
-using vvec = vector<vector<ll>>;
-using str = string;
 const ll mod = 1e9 + 7;
-const int N = 2e5 + 5;
-const int INF = 1e9;
 
 
 ll binpow(ll a, ll b, ll m) {
@@ -34,6 +26,7 @@ ll binpow(ll a, ll b, ll m) {
     }
     return res;
 }
+
 //ll binpow(ll a, ll b, ll mod) {
 //    a %= mod;
 //    if (b == 0)return 1;
@@ -46,16 +39,3 @@ int main() {
 //    Code By Davit
     cout << binpow(2, 10, mod);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
