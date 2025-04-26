@@ -25,8 +25,8 @@
 #include <fstream>
 #include <random>
 
-#include <ext/pb_ds/assoc_container.hpp>
-#include <ext/pb_ds/tree_policy.hpp>
+// #include <ext/pb_ds/assoc_container.hpp>
+// #include <ext/pb_ds/tree_policy.hpp>
 
 #define ll long long
 #define lld long double
@@ -41,16 +41,15 @@
 #define ME cout.tie(NULL);
 
 using namespace std;
-using namespace __gnu_pbds;
+// using namespace __gnu_pbds;
 
-//#include "Algo/debug.h"
-template<typename T, typename Compare = less<T>>
-using indexed_set = tree<
-        T,
-        null_type,
-        Compare,
-        rb_tree_tag,
-        tree_order_statistics_node_update>;
+// template<typename T, typename Compare = less<T>>
+// using indexed_set = tree<
+//         T,
+//         null_type,
+//         Compare,
+//         rb_tree_tag,
+//         tree_order_statistics_node_update>;
 
 //indexed_set<int> int_set;
 //*int_set.find_by_order(1)
@@ -96,7 +95,6 @@ public:
 
 private:
     vector<int> m_parent, m_size;
-
 };
 
 
@@ -125,19 +123,18 @@ public:
     }
 
 private:
-    vector<vector<int>> m_trie;
+    vector<vector<int> > m_trie;
 };
 
 class LCA {
 public:
     LCA(int n) {
         while ((1 << m_LOG) <= n)m_LOG++;
-        m_gp = vector<vector<int>>(n);
-        m_up = vector<vector<int>>(n, vector<int>(m_LOG));
+        m_gp = vector<vector<int> >(n);
+        m_up = vector<vector<int> >(n, vector<int>(m_LOG));
         m_depth = vector<int>(n);
 
         for (int i = 0; i < m_LOG; i++) m_up[0][i] = -1;
-
     }
 
     void run() {
@@ -152,7 +149,6 @@ public:
             }
         }
         return u;
-
     }
 
 
@@ -192,17 +188,16 @@ private:
     }
 
 private:
-    vector<vector<int>> m_gp;
-    vector<vector<int>> m_up;
+    vector<vector<int> > m_gp;
+    vector<vector<int> > m_up;
     vector<int> m_depth;
     int m_LOG = 1;
-
 };
 
 class DIJKSTRA {
 public:
     DIJKSTRA(int n) : m_n(n) {
-        m_gp = vector<vector<pair<int, long long>>>(n);
+        m_gp = vector<vector<pair<int, long long> > >(n);
     }
 
     void addEdge(int u, int v, long long w) {
@@ -212,7 +207,7 @@ public:
     vector<long long> getDist(int u) {
         vector<ll> p(m_n, -1), d(m_n, INF);
 
-        set<pair<ll, ll>> q;
+        set<pair<ll, ll> > q;
         q.insert({0, u});
         d[u] = 0;
         while (!q.empty()) {
@@ -229,39 +224,149 @@ public:
                 }
             }
         }
-//        ll t = m_n - 1;
-//        vector<ll> path;
-//        while (t != -1) {
-//            path.push_back(t);
-//            t = p[t];
-//        }
-//        reverse(path.begin(), path.end());
-//        if (d[m_n - 1] == INF) {
-//            cout << -1;
-//            return 0;
-//        }
-//        for (ll i = 0; i < path.size(); i++) cout << path[i] + 1 << " ";
         return d;
-
-
     }
-
 
 private:
     const long long INF = 1e18;
     int m_n;
-    vector<vector<pair<int, long long>>> m_gp;
+    vector<vector<pair<int, long long> > > m_gp;
+};
 
+class SegmentTree {
+    //m_modify_type : {assign, add}
+    //m_query_type : {sum,min,max}
+
+    // vector<long long> a = {1, 2, 3, 4, 5};
+    // SegmentTree seg1(a.size(), "add", "sum");
+    // seg1.build(a);
+    // std::cout<<seg1.get(1, 3);
+    // seg1.modify(1, 3, 10);
+
+public:
+    SegmentTree(int size, const string &modify_type, const string &query_type)
+        : m_n(size), m_modify_type(modify_type), m_query_type(query_type) {
+        m_seg.resize(4 * m_n);
+        if (m_query_type == "sum") m_default_value = 0;
+        else if (m_query_type == "min") m_default_value = LLONG_MAX;
+        else if (m_query_type == "max") m_default_value = LLONG_MIN;
+    }
+
+    void build(const vector<long long> &arr) {
+        build(0, 0, m_n - 1, arr);
+    }
+
+    void modify(int l, int r, long long val) {
+        modify(0, 0, m_n - 1, l, r, val);
+    }
+
+    long long get(int l, int r) {
+        return get(0, 0, m_n - 1, l, r);
+    }
+
+private:
+    void build(int node, int l, int r, const vector<long long> &arr) {
+        if (l == r) {
+            m_seg[node].value = arr[l];
+        } else {
+            int m = (l + r) / 2;
+            build(2 * node + 1, l, m, arr);
+            build(2 * node + 2, m + 1, r, arr);
+            m_seg[node].value = combine(m_seg[2 * node + 1].value, m_seg[2 * node + 2].value);
+        }
+    }
+
+    void push(int node, int l, int r) {
+        if (m_seg[node].has_assign) {
+            m_seg[node].value = apply_assign(m_seg[node].lazy_assign, r - l + 1);
+            if (l != r) {
+                apply_assign_lazy(2 * node + 1, m_seg[node].lazy_assign);
+                apply_assign_lazy(2 * node + 2, m_seg[node].lazy_assign);
+            }
+            m_seg[node].lazy_assign = 0;
+            m_seg[node].lazy_add = 0;
+            m_seg[node].has_assign = false;
+        } else if (m_seg[node].lazy_add != 0) {
+            m_seg[node].value = apply_add(m_seg[node].value, m_seg[node].lazy_add, r - l + 1);
+            if (l != r) {
+                m_seg[2 * node + 1].lazy_add += m_seg[node].lazy_add;
+                m_seg[2 * node + 2].lazy_add += m_seg[node].lazy_add;
+            }
+            m_seg[node].lazy_add = 0;
+        }
+    }
+
+    void apply_assign_lazy(int node, long long val) {
+        m_seg[node].lazy_assign = val;
+        m_seg[node].has_assign = true;
+        m_seg[node].lazy_add = 0;
+    }
+
+    long long apply_add(long long current, long long val, int len) {
+        if (m_query_type == "sum") return current + val * len;
+        else return current + val;
+    }
+
+    long long apply_assign(long long val, int len) {
+        if (m_query_type == "sum") return val * len;
+        else return val;
+    }
+
+    long long combine(long long a, long long b) {
+        if (m_query_type == "sum") return a + b;
+        else if (m_query_type == "min") return min(a, b);
+        else return max(a, b);
+    }
+
+    void modify(int node, int l, int r, int ql, int qr, long long val) {
+        push(node, l, r);
+        if (qr < l || r < ql) return;
+
+        if (ql <= l && r <= qr) {
+            if (m_modify_type == "assign") {
+                apply_assign_lazy(node, val);
+            } else if (m_modify_type == "add") {
+                m_seg[node].lazy_add += val;
+            }
+            push(node, l, r);
+            return;
+        }
+
+        int m = (l + r) / 2;
+        modify(2 * node + 1, l, m, ql, qr, val);
+        modify(2 * node + 2, m + 1, r, ql, qr, val);
+        m_seg[node].value = combine(m_seg[2 * node + 1].value, m_seg[2 * node + 2].value);
+    }
+
+    long long get(int node, int l, int r, int ql, int qr) {
+        push(node, l, r);
+        if (qr < l || r < ql) return m_default_value;
+        if (ql <= l && r <= qr) return m_seg[node].value;
+        int m = (l + r) / 2;
+        long long left = get(2 * node + 1, l, m, ql, qr);
+        long long right = get(2 * node + 2, m + 1, r, ql, qr);
+        return combine(left, right);
+    }
+
+private:
+    struct Node {
+        long long value = 0;
+        long long lazy_add = 0;
+        long long lazy_assign = 0;
+        bool has_assign = false;
+    };
+
+    int m_n;
+    vector<Node> m_seg;
+    string m_modify_type, m_query_type;
+    long long m_default_value;
 };
 
 void solve() {
-
 }
 
 int main() {
-
     int t = 1;
-//    cin >> t;
+    //    cin >> t;
     while (t--)solve();
 }
-
